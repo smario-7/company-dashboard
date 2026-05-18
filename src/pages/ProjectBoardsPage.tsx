@@ -43,7 +43,7 @@ export function ProjectBoardsPage() {
   // ── Optimistic create ──────────────────────────────────────────────────────
   const handleCreate = async (data: Pick<Board, 'name' | 'description'>) => {
     if (!boardSvc || !user || !projectSlug) return
-    const newBoard = await boardSvc.createBoard(projectSlug, data, user.githubLogin)
+    const newBoard = await boardSvc.createBoard(projectSlug, data, user.github_login)
     setBoards(prev => [newBoard, ...prev])   // ← instant, no re-fetch
   }
 

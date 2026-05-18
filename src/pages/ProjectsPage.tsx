@@ -32,7 +32,7 @@ export function ProjectsPage() {
   // ── Optimistic create ──────────────────────────────────────────────────────
   const handleCreate = async (data: Pick<Project, 'name' | 'description' | 'color' | 'emoji'>) => {
     if (!svc || !user) return
-    const newProject = await svc.createProject(data, user.githubLogin)
+    const newProject = await svc.createProject(data, user.github_login)
     setProjects(prev => [newProject, ...prev])   // ← instant update, no re-fetch
   }
 

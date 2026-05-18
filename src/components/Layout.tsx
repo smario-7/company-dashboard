@@ -105,18 +105,18 @@ export function Layout() {
             className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm
                        text-surface-200/60 hover:bg-white/5 hover:text-surface-50 transition-all"
           >
-            {user?.avatarUrl ? (
-              <img src={user.avatarUrl} alt="" className="h-6 w-6 rounded-full ring-1 ring-white/10" />
+            {user?.avatar_url ? (
+              <img src={user.avatar_url} alt="" className="h-6 w-6 rounded-full ring-1 ring-white/10" />
             ) : (
               <div className="h-6 w-6 rounded-full bg-surface-800 ring-1 ring-white/10" />
             )}
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium text-surface-50">{user?.displayName}</p>
-              <p className="truncate text-xs text-surface-200/40">@{user?.githubLogin}</p>
+              <p className="truncate text-xs font-medium text-surface-50">{user?.display_name}</p>
+              <p className="truncate text-xs text-surface-200/40">@{user?.github_login}</p>
             </div>
           </button>
           <button
-            onClick={logout}
+            onClick={() => void logout()}
             className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs
                        text-surface-200/40 hover:bg-white/5 hover:text-surface-200/70 transition-all"
           >
@@ -143,9 +143,9 @@ export function Layout() {
             </div>
             <span className="font-display text-sm font-semibold text-surface-50">Dashboard</span>
           </div>
-          {user?.avatarUrl && (
+          {user?.avatar_url && (
             <button onClick={() => navigate('/profile')}>
-              <img src={user.avatarUrl} alt="" className="h-7 w-7 rounded-full ring-1 ring-white/10" />
+              <img src={user.avatar_url} alt="" className="h-7 w-7 rounded-full ring-1 ring-white/10" />
             </button>
           )}
         </header>

@@ -19,3 +19,4 @@ Thumbs.db
 
 # Lokalna kopia bazy (produkcja trzyma database.sqlite na GitHubie)
 database.sqlite
+zipfile/

@@ -29,7 +29,7 @@ import { SortableCard, CardMiniature } from '../components/CardMiniature'
 import { CardModal } from '../components/CardModal'
 import { LabelManager } from '../components/LabelManager'
 import { generateId } from '../lib/utils'
-import type { Board, Column, Label, CardMeta, DBUser } from '../lib/types'
+import type { Board, Column, Label, CardMeta } from '../lib/types'
 
 function findCardColumn(cardId: string, order: Record<string, string[]>): string | null {
   for (const [colId, ids] of Object.entries(order)) {
@@ -49,7 +49,7 @@ const COLUMN_COLORS = [
 
 export function BoardPage() {
   const { projectSlug, boardSlug } = useParams<{ projectSlug: string; boardSlug: string }>()
-  const { storage, db } = useAuth()
+  const { storage, settings, user } = useAuth()
 
   const [board,          setBoard]          = useState<Board | null>(null)
   const [localBoard,     setLocalBoard]     = useState<Board | null>(null) // unsaved local state
@@ -93,9 +93,10 @@ export function BoardPage() {
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
-    if (!db) return
-    setMembers(db.query<DBUser>('SELECT github_login FROM users').map(u => u.github_login))
-  }, [db])
+    void settings.getAllProfiles().then(profiles => {
+      setMembers(profiles.map(p => p.github_login))
+    })
+  }, [settings])
 
   // ─── Save to GitHub (explicit) ──────────────────────────────────────────
 
@@ -125,13 +126,11 @@ export function BoardPage() {
 
   // ─── Card creation (always commits immediately) ─────────────────────────
 
-  const { user } = useAuth()
-
   const createCard = async (colId: string, title: string) => {
     if (!cardSvc || !user || !localBoard || !projectSlug || !boardSlug) return
     setSaving(true)
     try {
-      const meta  = await cardSvc.createCard(projectSlug, boardSlug, title, user.githubLogin)
+      const meta  = await cardSvc.createCard(projectSlug, boardSlug, title, user!.github_login)
       const newOrder = {
         ...localBoard.card_order,
         [colId]: [...(localBoard.card_order[colId] ?? []), meta.id],
