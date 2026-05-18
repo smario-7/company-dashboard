@@ -16,6 +16,3 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
-
-# Lokalna kopia bazy (produkcja trzyma database.sqlite na GitHubie)
-database.sqlite

@@ -6,8 +6,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "postinstall": "cp node_modules/sql.js/dist/sql-wasm.wasm public/sql-wasm.wasm && cp node_modules/sql.js/dist/sql-wasm.js public/sql-wasm.js",
-    "db:init": "node scripts/init-database.mjs"
+    "postinstall": "cp node_modules/sql.js/dist/sql-wasm.wasm public/sql-wasm.wasm && cp node_modules/sql.js/dist/sql-wasm.js public/sql-wasm.js"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.0",
