@@ -21,7 +21,9 @@
     }
   ],
   "card_order": {
-    "cb4bb717-bb5b-4034-856b-515afecdf337": [],
+    "cb4bb717-bb5b-4034-856b-515afecdf337": [
+      "a93564d4-3d73-4a95-bce3-65a2ec0f860d"
+    ],
     "52c25a58-cf62-47ec-a138-b7f4246eddd8": [],
     "efe5f9d8-3c1d-4458-9ad2-46e0eddd4a12": []
   },
