@@ -132,3 +132,34 @@ export interface Notification {
     comment?: string
   }
 }
+
+// ─── Projects & Boards ────────────────────────────────────────────────────────
+
+export interface Project {
+  id: string
+  slug: string
+  name: string
+  description: string
+  color: string
+  emoji: string
+  created_by: string
+  created_at: string
+  archived: boolean
+}
+
+export interface Board {
+  id: string
+  slug: string
+  name: string
+  description: string
+  columns: Column[]
+  created_by: string
+  created_at: string
+  archived: boolean
+}
+
+export interface Column {
+  id: string
+  name: string
+  color: string
+}

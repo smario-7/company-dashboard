@@ -9,12 +9,53 @@ import type { Database, SqlJsStatic } from 'sql.js'
 import type { GitHubStorage } from './GitHubStorage'
 import { isConflictError } from './types'
 
-// sql.js is loaded via <script src="%BASE_URL%sql-wasm.js"> in index.html
-// It sets window.initSqlJs — we declare it here for TypeScript
+// sql.js is a UMD module — we load it via a dynamic <script> tag so Vite
+// doesn't touch it, and we await the load before calling initSqlJs.
 declare global {
   interface Window {
-    initSqlJs: (config: { locateFile: (file: string) => string }) => Promise<SqlJsStatic>
+    initSqlJs?: (config: { locateFile: (file: string) => string }) => Promise<SqlJsStatic>
   }
+}
+
+/** Injects a <script> tag and resolves when it has loaded. No-op if already present. */
+function loadScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[data-sqljs]`)) {
+      resolve()
+      return
+    }
+    const s = document.createElement('script')
+    s.setAttribute('data-sqljs', '')
+    s.src = src
+    s.onload  = () => resolve()
+    s.onerror = () => reject(new Error(`Failed to load sql.js from: ${src}`))
+    document.head.appendChild(s)
+  })
+}
+
+let sqlJsPromise: Promise<SqlJsStatic> | null = null
+
+/** Returns the sql.js instance, loading it on first call. */
+async function getSqlJs(): Promise<SqlJsStatic> {
+  if (sqlJsPromise) return sqlJsPromise
+
+  sqlJsPromise = (async () => {
+    const base = import.meta.env.BASE_URL          // '/' in dev, '/company-dashboard/' in prod
+    await loadScript(`${base}sql-wasm.js`)
+
+    if (typeof window.initSqlJs !== 'function') {
+      throw new Error(
+        'window.initSqlJs not found after loading sql-wasm.js. ' +
+        'Make sure public/sql-wasm.js exists (run: npm install)',
+      )
+    }
+
+    return window.initSqlJs({
+      locateFile: (file: string) => `${base}${file}`,
+    })
+  })()
+
+  return sqlJsPromise
 }
 
 const DB_PATH = 'database.sqlite'
@@ -111,16 +152,7 @@ export class DatabaseManager {
 
   async init(): Promise<void> {
     if (!this.SQL) {
-      // sql.js is loaded via <script> tag — window.initSqlJs is set by it
-      if (typeof window.initSqlJs !== 'function') {
-        throw new Error(
-          'sql.js not loaded. Make sure sql-wasm.js is in public/ ' +
-          '(run: npm run postinstall)',
-        )
-      }
-      this.SQL = await window.initSqlJs({
-        locateFile: (file: string) => `${import.meta.env.BASE_URL}${file}`,
-      })
+      this.SQL = await getSqlJs()
     }
 
     const file = await this.storage.readBinaryFile(DB_PATH)
@@ -226,7 +258,8 @@ export class DatabaseManager {
 
   private async reload(): Promise<void> {
     const file = await this.storage.readBinaryFile(DB_PATH)
-    if (!file || !this.SQL) return
+    if (!file) return
+    if (!this.SQL) this.SQL = await getSqlJs()
     this.sha = file.sha
     this.db = new this.SQL.Database(b64ToUint8(file.base64))
     this.db.run(SCHEMA)
