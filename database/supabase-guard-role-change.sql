@@ -1,21 +1,15 @@
--- Uruchom w Supabase → SQL Editor (Fix 1 z plan-security-improvements.md)
-
 CREATE OR REPLACE FUNCTION guard_role_change()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   IF NEW.role = OLD.role THEN
     RETURN NEW;
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1
-    FROM user_profiles
-    WHERE id = auth.uid()
-      AND role = 'admin'
-  ) THEN
+  IF NOT public.is_admin() THEN
     RAISE EXCEPTION 'Only admins can change user roles'
       USING ERRCODE = 'insufficient_privilege';
   END IF;

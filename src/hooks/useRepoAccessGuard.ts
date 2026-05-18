@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabase'
 const OWNER          = import.meta.env.VITE_GITHUB_OWNER
 const REPO           = import.meta.env.VITE_GITHUB_REPO
 const CHECK_INTERVAL = 30 * 60 * 1000
+const GH_TOKEN_KEY   = 'company-dashboard:github_provider_token'
 
 async function checkRepoAccess(token: string): Promise<boolean> {
   try {
@@ -37,9 +38,8 @@ export function useRepoAccessGuard(session: Session | null): void {
   const lastCheckRef = useRef<number>(0)
 
   useEffect(() => {
-    if (!session?.provider_token) return
-
-    const token = session.provider_token
+    const token = session?.provider_token ?? sessionStorage.getItem(GH_TOKEN_KEY)
+    if (!token) return
 
     const runCheck = async () => {
       const now = Date.now()

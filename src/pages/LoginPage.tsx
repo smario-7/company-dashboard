@@ -9,17 +9,18 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { isGitHubOAuthMisconfigured, OAUTH_MISCONFIG_MESSAGE } from '../lib/checkOAuthConfig'
 import { useAuth } from '../contexts/AuthContext'
 
 export function LoginPage() {
-  const { user }  = useAuth()
+  const { user, isLoading, authError } = useAuth()
   const navigate  = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
 
   useEffect(() => {
-    if (user) navigate('/projects', { replace: true })
-  }, [user, navigate])
+    if (!isLoading && user) navigate('/projects', { replace: true })
+  }, [user, isLoading, navigate])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -40,23 +41,42 @@ export function LoginPage() {
     setLoading(true)
     setError('')
     try {
-      const { error: authError } = await supabase.auth.signInWithOAuth({
+      if (await isGitHubOAuthMisconfigured()) {
+        throw new Error(OAUTH_MISCONFIG_MESSAGE)
+      }
+      const { data, error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
           scopes:     'repo user:email',
-          redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
+          redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}login`,
         },
       })
       if (authError) throw authError
+      if (data?.url) {
+        window.location.assign(data.url)
+        return
+      }
+      throw new Error('Could not start GitHub login. Try again.')
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Login failed')
+    } finally {
       setLoading(false)
     }
   }
 
+  const displayError = error || authError
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-surface-900">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-surface-800 border-t-brand-400" />
+      </div>
+    )
+  }
+
   return (
     <LoginForm
-      error={error}
+      error={displayError ?? ''}
       loading={loading}
       onLogin={handleLogin}
     />

@@ -22,9 +22,10 @@ export class SettingsService {
   async upsertProfile(
     profile: Partial<UserProfile> & { id: string }
   ): Promise<void> {
-    await supabase
+    const { error } = await supabase
       .from('user_profiles')
       .upsert(profile, { onConflict: 'id' })
+    if (error) throw error
   }
 
   async updateProfile(
@@ -57,10 +58,11 @@ export class SettingsService {
   }
 
   async isFirstUser(): Promise<boolean> {
-    const { count } = await supabase
+    const { count, error } = await supabase
       .from('user_profiles')
       .select('*', { count: 'exact', head: true })
-    return (count ?? 0) === 0
+    if (error) throw new Error(error.message)
+    return count === 0
   }
 
   async getConfig(key: string): Promise<unknown> {

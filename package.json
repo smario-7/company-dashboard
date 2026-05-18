@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "oauth:setup": "node scripts/oauth-setup-urls.mjs",
+    "oauth:verify": "node scripts/verify-github-oauth.mjs"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.0",
