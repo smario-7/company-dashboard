@@ -46,19 +46,14 @@ export class ProjectService {
       archived:   false,
     }
 
-    // Create project.json + boards directory in one shot (parallel)
-    await Promise.all([
-      this.storage.writeJSON(
-        `projects/${slug}/project.json`,
-        project,
-        undefined,
-        `feat: create project "${params.name}"`,
-      ),
-      this.storage.createDirectory(
-        `projects/${slug}/boards`,
-        `feat: init boards dir for project "${params.name}"`,
-      ),
-    ])
+    // GitHub creates all parent directories automatically when writing a file.
+    // No need to create `boards/` separately — listFiles returns [] for missing dirs.
+    await this.storage.writeJSON(
+      `projects/${slug}/project.json`,
+      project,
+      undefined,
+      `feat: create project "${params.name}"`,
+    )
 
     return project
   }

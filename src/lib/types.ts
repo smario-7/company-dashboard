@@ -153,6 +153,8 @@ export interface Board {
   name: string
   description: string
   columns: Column[]
+  card_order: Record<string, string[]>  // column_id → ordered card_ids
+  labels: Label[]                        // label definitions for this board
   created_by: string
   created_at: string
   archived: boolean
@@ -162,4 +164,33 @@ export interface Column {
   id: string
   name: string
   color: string
+}
+
+// ─── Cards ────────────────────────────────────────────────────────────────────
+
+export interface Label {
+  id: string
+  name: string
+  color: string
+}
+
+export interface ChecklistItem {
+  id: string
+  text: string
+  done: boolean
+}
+
+export interface CardMeta {
+  id: string
+  title: string
+  description: string
+  label_ids: string[]
+  assignees: string[]         // github_login values
+  due_date: string | null     // ISO date string
+  priority: 'none' | 'low' | 'medium' | 'high'
+  checklist: ChecklistItem[]
+  archived: boolean
+  created_by: string
+  created_at: string
+  updated_at: string
 }
