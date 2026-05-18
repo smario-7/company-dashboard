@@ -1,0 +1,32 @@
+{
+  "name": "Frontend",
+  "description": "Działamy nad rozwojem aplikacji",
+  "id": "9bd0db46-0c34-4244-9e75-1bf218c02a75",
+  "slug": "frontend",
+  "columns": [
+    {
+      "name": "To Do",
+      "color": "#64748b",
+      "id": "cb4bb717-bb5b-4034-856b-515afecdf337"
+    },
+    {
+      "name": "In Progress",
+      "color": "#f59e0b",
+      "id": "52c25a58-cf62-47ec-a138-b7f4246eddd8"
+    },
+    {
+      "name": "Done",
+      "color": "#22c55e",
+      "id": "efe5f9d8-3c1d-4458-9ad2-46e0eddd4a12"
+    }
+  ],
+  "card_order": {
+    "cb4bb717-bb5b-4034-856b-515afecdf337": [],
+    "52c25a58-cf62-47ec-a138-b7f4246eddd8": [],
+    "efe5f9d8-3c1d-4458-9ad2-46e0eddd4a12": []
+  },
+  "labels": [],
+  "created_by": "smario-7",
+  "created_at": "2026-05-18T14:42:54.631Z",
+  "archived": false
+}
