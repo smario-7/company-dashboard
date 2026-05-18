@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  *, *::before, *::after {
+    @apply box-border;
+  }
+
+  html {
+    @apply scroll-smooth antialiased;
+    font-feature-settings: 'ss01', 'ss02', 'cv01';
+  }
+
+  body {
+    @apply bg-surface-900 font-sans text-sm text-surface-50 selection:bg-brand-500/30;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Hide scrollbars on webkit but keep functionality */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track  { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb  { @apply rounded-full bg-surface-800; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-surface-200/20; }
+}
+
+/* ── Components ───────────────────────────────────────────────────────────── */
+
+@layer components {
+  /* Glassy panel */
+  .glass {
+    @apply bg-surface-800/80 backdrop-blur-sm border border-white/5;
+  }
+
+  /* Input base */
+  .input {
+    @apply w-full rounded-xl bg-surface-850 border border-white/10 px-3 py-2
+           text-sm text-surface-50 placeholder:text-surface-200/30
+           outline-none ring-0
+           focus:border-brand-400/50 focus:ring-1 focus:ring-brand-400/20
+           transition-all duration-150;
+  }
+
+  /* Button variants */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2
+           text-sm font-medium transition-all duration-150 cursor-pointer
+           disabled:opacity-40 disabled:cursor-not-allowed select-none;
+  }
+  .btn-primary {
+    @apply btn bg-brand-500 text-white hover:bg-brand-400 active:scale-[0.98]
+           shadow-glow-sm hover:shadow-glow;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent text-surface-200/70 hover:bg-white/5 hover:text-surface-50;
+  }
+  .btn-danger {
+    @apply btn bg-accent-red/10 text-accent-red hover:bg-accent-red/20;
+  }
+
+  /* Card */
+  .card {
+    @apply rounded-2xl bg-surface-800 border border-white/5 shadow-card;
+  }
+  .card-hover {
+    @apply card transition-all duration-200 hover:shadow-card-hover hover:border-white/10;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+
+  /* Subtle divider */
+  .divider {
+    @apply border-t border-white/5;
+  }
+}
