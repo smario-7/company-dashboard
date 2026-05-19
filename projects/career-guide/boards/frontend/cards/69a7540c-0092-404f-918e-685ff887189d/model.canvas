@@ -1,4 +1,14 @@
 {
-  "nodes": [],
+  "nodes": [
+    {
+      "id": "fe87a016-caba-44dc-a92c-7aaa0b10c81e",
+      "type": "file",
+      "x": 180,
+      "y": 240,
+      "width": 250,
+      "height": 218,
+      "file": "README.md"
+    }
+  ],
   "edges": []
 }
