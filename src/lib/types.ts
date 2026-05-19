@@ -124,3 +124,62 @@ export interface CardMeta {
   created_at: string
   updated_at: string
 }
+
+// ─── JSON Canvas (Obsidian / jsoncanvas.org spec 1.0) ───────────────────────
+
+export type PortSide = 'top' | 'right' | 'bottom' | 'left'
+export type EdgeEnd = 'none' | 'arrow'
+export type CanvasNodeColor = '0' | '1' | '2' | '3' | '4' | '5' | '6' | string
+export type GroupBackgroundStyle = 'cover' | 'ratio' | 'repeat'
+
+export interface CanvasNodeBase {
+  id:     string
+  x:      number
+  y:      number
+  width:  number
+  height: number
+  color?: CanvasNodeColor
+}
+
+export interface CanvasTextNode extends CanvasNodeBase {
+  type: 'text'
+  text: string
+}
+
+export interface CanvasFileNode extends CanvasNodeBase {
+  type: 'file'
+  file: string
+  subpath?: string
+}
+
+export interface CanvasLinkNode extends CanvasNodeBase {
+  type: 'link'
+  url: string
+}
+
+export interface CanvasGroupNode extends CanvasNodeBase {
+  type: 'group'
+  label?: string
+  background?: string
+  backgroundStyle?: GroupBackgroundStyle
+}
+
+export type CanvasNode =
+  | CanvasTextNode
+  | CanvasFileNode
+  | CanvasLinkNode
+  | CanvasGroupNode
+
+export interface CanvasEdge {
+  id:       string
+  fromNode: string
+  toNode:   string
+  fromSide?: PortSide
+  toSide?:   PortSide
+  fromEnd?:  EdgeEnd
+  toEnd?:    EdgeEnd
+  color?:    CanvasNodeColor
+  label?:    string
+}
+
+export type JsonCanvasNode = Record<string, unknown>

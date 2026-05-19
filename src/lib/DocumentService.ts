@@ -10,6 +10,7 @@
  */
 
 import type { GitHubStorage } from './GitHubStorage'
+import { cardBasePath as buildCardBasePath } from './canvasPaths'
 
 export interface CardFile {
   name: string
@@ -22,8 +23,12 @@ export interface CardFile {
 export class DocumentService {
   constructor(private storage: GitHubStorage) {}
 
+  cardBasePath(projectSlug: string, boardSlug: string, cardId: string): string {
+    return buildCardBasePath(projectSlug, boardSlug, cardId)
+  }
+
   private base(p: string, b: string, c: string): string {
-    return `projects/${p}/boards/${b}/cards/${c}`
+    return this.cardBasePath(p, b, c)
   }
 
   // ─── File listing ──────────────────────────────────────────────────────────

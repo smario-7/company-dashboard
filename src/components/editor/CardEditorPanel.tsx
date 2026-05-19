@@ -11,6 +11,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { FileTree } from './FileTree'
 import { MarkdownEditor } from './MarkdownEditor'
+import { CanvasEditor } from './canvas/CanvasEditor'
 import { AttachmentsList } from './AttachmentsList'
 import { DocumentService, type CardFile } from '../../lib/DocumentService'
 import type { GitHubStorage } from '../../lib/GitHubStorage'
@@ -202,13 +203,30 @@ export function CardEditorPanel({ projectSlug, boardSlug, cardId, cardTitle, sto
             {/* Editor main area */}
             <div className="flex-1 min-w-0">
               {activeFile ? (
-                <MarkdownEditor
-                  content={content}
-                  onChange={setContent}
-                  onSave={saveFile}
-                  saving={fileSaving}
-                  filePath={activeFile.path}
-                />
+                activeFile.type === 'canvas' ? (
+                  <CanvasEditor
+                    content={content}
+                    onChange={setContent}
+                    onSave={saveFile}
+                    saving={fileSaving}
+                    filePath={activeFile.path}
+                    availableFiles={files
+                      .filter(f => f.type === 'md' || f.type === 'canvas')
+                      .map(f => ({ path: f.path, name: f.name }))}
+                    availableAssets={assets.map(a => ({ path: a.path, name: a.name }))}
+                    documentService={svc}
+                    cardScope={{ projectSlug, boardSlug, cardId }}
+                    githubRaw={{ owner: OWNER, repo: REPO }}
+                  />
+                ) : (
+                  <MarkdownEditor
+                    content={content}
+                    onChange={setContent}
+                    onSave={saveFile}
+                    saving={fileSaving}
+                    filePath={activeFile.path}
+                  />
+                )
               ) : (
                 <div className="flex flex-col items-center justify-center h-full gap-3">
                   <p className="text-sm text-surface-200/30">Select a file to edit</p>
