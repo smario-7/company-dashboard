@@ -11,10 +11,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
 import {
-  DndContext, DragOverlay, closestCenter,
+  DndContext, DragOverlay, closestCorners, pointerWithin,
   PointerSensor, KeyboardSensor,
   useSensor, useSensors,
   type DragStartEvent, type DragOverEvent, type DragEndEvent,
+  type CollisionDetection,
 } from '@dnd-kit/core'
 import {
   SortableContext, sortableKeyboardCoordinates,
@@ -52,6 +53,23 @@ const COLUMN_COLORS = [
 
 /** Szerokość kolumny tablicy (320px). Niezależna od CardModal. */
 const BOARD_COL_WIDTH = 'w-80'
+
+const boardCollisionDetection: CollisionDetection = (args) => {
+  const dragType = args.active.data.current?.type as 'card' | 'column' | undefined
+
+  if (dragType === 'column') {
+    const columnContainers = args.droppableContainers.filter(
+      c => c.data.current?.type === 'column',
+    )
+    const corners = closestCorners({ ...args, droppableContainers: columnContainers })
+    if (corners.length > 0) return corners
+    return pointerWithin({ ...args, droppableContainers: columnContainers })
+  }
+
+  const corners = closestCorners(args)
+  if (corners.length > 0) return corners
+  return pointerWithin(args)
+}
 
 export function BoardPage() {
   const { projectSlug, boardSlug } = useParams<{ projectSlug: string; boardSlug: string }>()
@@ -286,7 +304,27 @@ export function BoardPage() {
   }
 
   const onDragOver = ({ active, over }: DragOverEvent) => {
-    if (!over || activeType !== 'card') return
+    if (!over) return
+    const dragType = active.data.current?.type as 'card' | 'column' | undefined
+
+    if (dragType === 'column') {
+      const activeId = active.id as string
+      const overId   = over.id as string
+      if (activeId === overId) return
+
+      setLocalBoard(prev => {
+        if (!prev) return prev
+        const oldIdx = prev.columns.findIndex(c => c.id === activeId)
+        const newIdx = prev.columns.findIndex(c => c.id === overId)
+        if (oldIdx < 0 || newIdx < 0 || oldIdx === newIdx) return prev
+        return { ...prev, columns: arrayMove(prev.columns, oldIdx, newIdx) }
+      })
+      setPendingChanges(true)
+      return
+    }
+
+    if (dragType !== 'card') return
+
     const activeId = active.id as string
     const overId   = over.id as string
     const srcCol   = findCardColumn(activeId, localOrder)
@@ -308,19 +346,16 @@ export function BoardPage() {
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     setActiveId(null); setActiveType(null)
     if (!over || !localBoard) return
+    const dragType = active.data.current?.type as 'card' | 'column' | undefined
     const aId = active.id as string
     const oId = over.id  as string
 
-    if (activeType === 'column') {
-      const oldIdx = localBoard.columns.findIndex(c => c.id === aId)
-      const newIdx = localBoard.columns.findIndex(c => c.id === oId)
-      if (oldIdx !== newIdx) {
-        mutateBoard(b => ({ ...b, columns: arrayMove(b.columns, oldIdx, newIdx) }))
-      }
+    if (dragType === 'column') {
+      setPendingChanges(true)
       return
     }
 
-    if (activeType === 'card') {
+    if (dragType === 'card') {
       const col = findCardColumn(aId, localOrder)
       if (col) {
         const oldIdx = localOrder[col].indexOf(aId)
@@ -407,7 +442,7 @@ export function BoardPage() {
       {/* ── Board canvas ─────────────────────────────────────────────────────── */}
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={boardCollisionDetection}
         onDragStart={onDragStart}
         onDragOver={onDragOver}
         onDragEnd={onDragEnd}
