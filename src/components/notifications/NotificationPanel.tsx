@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import type { NotificationRow } from '../../lib/NotificationService'
@@ -7,6 +8,7 @@ import type { NotificationType } from '../../lib/types'
 
 interface Props {
   onClose: () => void
+  style?: CSSProperties
 }
 
 function typeLabel(type: NotificationType): string {
@@ -51,7 +53,7 @@ function NotificationItem({
           <p className="text-[10px] uppercase tracking-wide text-brand-400/80">
             {typeLabel(row.type)}
           </p>
-          <p className="text-xs text-surface-50 line-clamp-2">
+          <p className="text-sm text-surface-50 line-clamp-2">
             <span className="font-medium">{actorName}</span>
             {' — '}
             {title}
@@ -68,7 +70,7 @@ function NotificationItem({
   )
 }
 
-export function NotificationPanel({ onClose }: Props) {
+export function NotificationPanel({ onClose, style }: Props) {
   const { notifications } = useAuth()
   const navigate = useNavigate()
   const [items, setItems] = useState<NotificationRow[]>([])
@@ -100,9 +102,11 @@ export function NotificationPanel({ onClose }: Props) {
   const olderItems = items.filter(i => new Date(i.created_at).toDateString() !== today)
 
   return (
-    <div className="absolute right-0 top-full mt-2 w-80 max-h-[min(24rem,70vh)]
-                    rounded-2xl border border-white/10 bg-surface-800 shadow-modal
-                    overflow-hidden z-50 flex flex-col animate-fade-in">
+    <div
+      style={style}
+      className="z-[60] flex flex-col overflow-hidden rounded-2xl border border-white/10
+                 bg-surface-800 shadow-modal animate-fade-in"
+    >
       <div className="flex items-center justify-between px-3 py-2 border-b border-white/5 flex-shrink-0">
         <span className="text-sm font-semibold text-surface-50">Notifications</span>
         <div className="flex gap-1">
@@ -119,7 +123,7 @@ export function NotificationPanel({ onClose }: Props) {
         </div>
       </div>
 
-      <div className="overflow-y-auto flex-1">
+      <div className="overflow-y-auto flex-1 min-h-0">
         {loading && (
           <p className="p-4 text-xs text-surface-200/40 text-center">Loading…</p>
         )}

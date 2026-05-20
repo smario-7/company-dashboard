@@ -30,6 +30,7 @@ import { notifyUsers } from '../lib/trelloNotify'
 import { SortableCard, CardMiniature } from '../components/CardMiniature'
 import { CardModal } from '../components/CardModal'
 import { LabelManager } from '../components/LabelManager'
+import { boardTintStyle } from '../lib/colorUtils'
 import { generateId } from '../lib/utils'
 import type { Board, Column, Label, CardMeta } from '../lib/types'
 
@@ -357,6 +358,16 @@ export function BoardPage() {
 
   const openCard = openCardId ? cards[openCardId] : null
 
+  const dragColumn = activeId && activeType === 'column'
+    ? localBoard.columns.find(c => c.id === activeId)
+    : null
+  const dragCardColId = activeId && activeType === 'card'
+    ? findCardColumn(activeId, localOrder)
+    : null
+  const dragCardColumnColor = dragCardColId
+    ? localBoard.columns.find(c => c.id === dragCardColId)?.color
+    : undefined
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* ── Topbar ──────────────────────────────────────────────────────────── */}
@@ -426,11 +437,19 @@ export function BoardPage() {
         <DragOverlay>
           {activeId && activeType === 'card' && cards[activeId] && (
             <div className={`${BOARD_COL_WIDTH} rotate-2 scale-105`}>
-              <CardMiniature card={cards[activeId].data} labels={localBoard.labels} onClick={() => {}} />
+              <CardMiniature
+                card={cards[activeId].data}
+                labels={localBoard.labels}
+                columnColor={dragCardColumnColor}
+                onClick={() => {}}
+              />
             </div>
           )}
-          {activeId && activeType === 'column' && (
-            <div className={`${BOARD_COL_WIDTH} opacity-80 rounded-2xl bg-surface-800 border border-white/10 h-40`} />
+          {dragColumn && (
+            <div
+              className={`${BOARD_COL_WIDTH} opacity-80 rounded-2xl border h-40`}
+              style={boardTintStyle(dragColumn.color, 'column')}
+            />
           )}
         </DragOverlay>
       </DndContext>
@@ -482,7 +501,12 @@ interface ColProps {
 function BoardColumn({ column, cardIds, cards, labels, onCardClick, onAddCard, onRename, onColorChange, onRemove }: ColProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: column.id, data: { type: 'column' } })
-  const style = { transform: CSS.Transform.toString(transform), transition }
+  const columnTint = boardTintStyle(column.color, 'column')
+  const style = {
+    ...columnTint,
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
 
   const [menuOpen,   setMenuOpen]   = useState(false)
   const [renaming,   setRenaming]   = useState(false)
@@ -507,7 +531,9 @@ function BoardColumn({ column, cardIds, cards, labels, onCardClick, onAddCard, o
 
   return (
     <div ref={setNodeRef} style={style}
-      className={`flex-shrink-0 ${BOARD_COL_WIDTH} flex flex-col rounded-2xl bg-surface-800 border border-white/5 max-h-full ${isDragging ? 'opacity-40' : ''}`}>
+      className={`flex-shrink-0 ${BOARD_COL_WIDTH} flex flex-col rounded-2xl border max-h-full
+                  ${Object.keys(columnTint).length === 0 ? 'bg-surface-800 border-white/5' : ''}
+                  ${isDragging ? 'opacity-40' : ''}`}>
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2.5 cursor-grab active:cursor-grabbing flex-shrink-0"
         {...attributes} {...listeners}>
@@ -567,7 +593,14 @@ function BoardColumn({ column, cardIds, cards, labels, onCardClick, onAddCard, o
         <SortableContext items={visibleIds} strategy={verticalListSortingStrategy}>
           <div className="space-y-2 py-1">
             {visibleIds.map(id => (
-              <SortableCard key={id} id={id} card={cards[id].data} labels={labels} onClick={() => onCardClick(id)} />
+              <SortableCard
+                key={id}
+                id={id}
+                card={cards[id].data}
+                labels={labels}
+                columnColor={column.color}
+                onClick={() => onCardClick(id)}
+              />
             ))}
           </div>
         </SortableContext>

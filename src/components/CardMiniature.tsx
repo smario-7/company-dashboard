@@ -1,12 +1,14 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { boardTintStyle } from '../lib/colorUtils'
 import type { CardMeta, Label } from '../lib/types'
 
 interface Props {
-  card:        CardMeta
-  labels:      Label[]            // board-level label definitions
-  isDragging?: boolean
-  onClick:     () => void
+  card:         CardMeta
+  labels:       Label[]
+  columnColor?: string
+  isDragging?:  boolean
+  onClick:      () => void
 }
 
 const PRIORITY_DOT: Record<string, string> = {
@@ -16,17 +18,21 @@ const PRIORITY_DOT: Record<string, string> = {
   none:   '',
 }
 
-export function CardMiniature({ card, labels, isDragging, onClick }: Props) {
+export function CardMiniature({ card, labels, columnColor, isDragging, onClick }: Props) {
   const cardLabels   = labels.filter(l => card.label_ids.includes(l.id))
   const checkedCount = card.checklist.filter(i => i.done).length
   const totalCount   = card.checklist.length
   const isOverdue    = card.due_date && new Date(card.due_date) < new Date() && !card.archived
+  const tintStyle    = boardTintStyle(columnColor, 'card')
+  const hasTint      = Object.keys(tintStyle).length > 0
 
   return (
     <div
       onClick={onClick}
-      className={`group rounded-xl bg-surface-850 border border-white/5 p-3 cursor-pointer
+      style={tintStyle}
+      className={`group rounded-xl border p-3 cursor-pointer
                   shadow-card hover:shadow-card-hover hover:border-white/10 transition-all
+                  ${hasTint ? '' : 'bg-surface-850 border-white/5'}
                   ${isDragging ? 'opacity-50 rotate-1 scale-105' : ''}
                   ${card.archived ? 'opacity-40' : ''}`}
     >
