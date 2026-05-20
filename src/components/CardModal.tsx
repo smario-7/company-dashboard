@@ -153,8 +153,8 @@ export function CardModal({
           {/* Left: metadata ─────────────────────────────────────────────── */}
           <div className="w-full min-h-0 max-h-[min(45vh,50%)] md:max-h-none
                           md:w-80 flex-shrink-0 border-b md:border-b-0 md:border-r border-white/5
-                          overflow-y-auto flex flex-col">
-            <div className="flex-1 p-5 space-y-4">
+                          overflow-hidden flex flex-col">
+            <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
 
               {/* Description */}
               <div>
