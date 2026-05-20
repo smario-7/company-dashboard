@@ -4,7 +4,7 @@
  * The document editor inside a card modal.
  * Layout:
  *   ┌──────────┬──────────────────────────────────┐
- *   │ FileTree │  MarkdownEditor / AttachmentsList │
+ *   │ FileTree │  MarkdownEditor / AttachmentsPanel │
  *   └──────────┴──────────────────────────────────┘
  */
 
@@ -12,7 +12,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { FileTree } from './FileTree'
 import { MarkdownEditor } from './MarkdownEditor'
 import { CanvasEditor } from './canvas/CanvasEditor'
-import { AttachmentsList } from './AttachmentsList'
+import { AttachmentsPanel } from './AttachmentsPanel'
 import { DocumentService, type CardFile } from '../../lib/DocumentService'
 import type { GitHubStorage } from '../../lib/GitHubStorage'
 
@@ -37,7 +37,6 @@ export function CardEditorPanel({ projectSlug, boardSlug, cardId, cardTitle, sto
   const [contentSha,  setContentSha]  = useState('')
   const [filesLoading,setFilesLoading]= useState(true)
   const [fileSaving,  setFileSaving]  = useState(false)
-  const [uploading,   setUploading]   = useState(false)
   const [tab,         setTab]         = useState<'docs' | 'assets'>('docs')
 
   // ─── Load files ─────────────────────────────────────────────────────────
@@ -50,7 +49,7 @@ export function CardEditorPanel({ projectSlug, boardSlug, cardId, cardTitle, sto
 
       const [docFiles, assetFiles] = await Promise.all([
         svc.listFiles(projectSlug, boardSlug, cardId),
-        svc.listAssets(projectSlug, boardSlug, cardId),
+        svc.listAttachments(projectSlug, boardSlug, cardId),
       ])
 
       setFiles(docFiles)
@@ -137,21 +136,17 @@ export function CardEditorPanel({ projectSlug, boardSlug, cardId, cardTitle, sto
 
   // ─── Upload asset ────────────────────────────────────────────────────────
 
-  const uploadAsset = async (fileName: string, base64: string) => {
-    setUploading(true)
-    try {
-      const result = await svc.uploadAsset(projectSlug, boardSlug, cardId, fileName, base64)
-      const newAsset: CardFile = {
-        name: fileName,
-        path: result.path,
-        sha:  result.sha,
-        size: Math.floor(base64.length * 0.75),
-        type: 'asset',
-      }
-      setAssets(prev => [...prev, newAsset])
-    } finally {
-      setUploading(false)
+  const uploadAsset = async (fileName: string, base64: string): Promise<CardFile> => {
+    const result = await svc.uploadAsset(projectSlug, boardSlug, cardId, fileName, base64)
+    const newAsset: CardFile = {
+      name: fileName,
+      path: result.path,
+      sha:  result.sha,
+      size: Math.floor(base64.length * 0.75),
+      type: 'asset',
     }
+    setAssets(prev => [...prev, newAsset].sort((a, b) => a.name.localeCompare(b.name)))
+    return newAsset
   }
 
   const deleteAsset = async (file: CardFile) => {
@@ -235,13 +230,17 @@ export function CardEditorPanel({ projectSlug, boardSlug, cardId, cardTitle, sto
             </div>
           </>
         ) : (
-          <AttachmentsList
-            assets={assets}
+          <AttachmentsPanel
+            projectSlug={projectSlug}
+            boardSlug={boardSlug}
+            cardId={cardId}
+            files={assets}
+            loading={filesLoading}
             owner={OWNER}
             repo={REPO}
+            svc={svc}
             onUpload={uploadAsset}
             onDelete={deleteAsset}
-            uploading={uploading}
           />
         )}
       </div>

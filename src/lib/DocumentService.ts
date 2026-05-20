@@ -64,6 +64,25 @@ export class DocumentService {
     return entries
       .filter(e => e.type === 'file' && !e.name.startsWith('.'))
       .map(e => ({ name: e.name, path: e.path, sha: e.sha, size: e.size, type: 'asset' as const }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }
+
+  /** Assets folder + non-document files at card root (json, images, etc.). */
+  async listAttachments(
+    projectSlug: string,
+    boardSlug:   string,
+    cardId:      string,
+  ): Promise<CardFile[]> {
+    const [assetFiles, cardFiles] = await Promise.all([
+      this.listAssets(projectSlug, boardSlug, cardId),
+      this.listFiles(projectSlug, boardSlug, cardId),
+    ])
+    const rootFiles = cardFiles.filter(f => f.type === 'other')
+    const byPath = new Map<string, CardFile>()
+    for (const f of [...assetFiles, ...rootFiles]) {
+      byPath.set(f.path, { ...f, type: 'asset' })
+    }
+    return [...byPath.values()].sort((a, b) => a.name.localeCompare(b.name))
   }
 
   // ─── Read ──────────────────────────────────────────────────────────────────
