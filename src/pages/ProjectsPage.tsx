@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { ProjectService } from '../lib/ProjectService'
 import { CreateProjectModal } from '../components/CreateProjectModal'
 import { formatRelativeTime } from '../lib/utils'
 import type { Project } from '../lib/types'
 
 export function ProjectsPage() {
-  const { user, storage } = useAuth()
+  const { user, projects: projectsSvc } = useAuth()
   const navigate = useNavigate()
 
   const [projects,     setProjects]     = useState<Project[]>([])
@@ -18,28 +17,26 @@ export function ProjectsPage() {
   const [menuOpen,     setMenuOpen]     = useState<string | null>(null)
   const [archiving,    setArchiving]    = useState<string | null>(null)
 
-  const svc = storage ? new ProjectService(storage) : null
-
   const load = useCallback(async () => {
-    if (!svc) return
+    if (!projectsSvc) return
     setLoading(true)
-    try { setProjects(await svc.listProjects(showArchived)) }
+    try { setProjects(await projectsSvc.listProjects(showArchived)) }
     finally { setLoading(false) }
-  }, [storage, showArchived]) // eslint-disable-line
+  }, [projectsSvc, showArchived]) // eslint-disable-line
 
   useEffect(() => { load() }, [load])
 
   // ── Optimistic create ──────────────────────────────────────────────────────
   const handleCreate = async (data: Pick<Project, 'name' | 'description' | 'color' | 'emoji'>) => {
-    if (!svc || !user) return
-    const newProject = await svc.createProject(data, user.github_login)
+    if (!user) return
+    const newProject = await projectsSvc.createProject(data, user.github_login)
     setProjects(prev => [newProject, ...prev])   // ← instant update, no re-fetch
   }
 
   // ── Optimistic edit ────────────────────────────────────────────────────────
   const handleEdit = async (data: Pick<Project, 'name' | 'description' | 'color' | 'emoji'>) => {
-    if (!svc || !editProject) return
-    await svc.updateProject(editProject.slug, data)
+    if (!editProject) return
+    await projectsSvc.updateProject(editProject.slug, data)
     setProjects(prev => prev.map(p =>
       p.slug === editProject.slug ? { ...p, ...data } : p
     ))
@@ -48,10 +45,9 @@ export function ProjectsPage() {
 
   // ── Optimistic archive / restore ──────────────────────────────────────────
   const handleArchive = async (project: Project) => {
-    if (!svc) return
     setArchiving(project.slug)
     try {
-      await svc.setArchived(project.slug, !project.archived)
+      await projectsSvc.setArchived(project.slug, !project.archived)
       if (!showArchived) {
         // Remove from list when archiving (archived ones are hidden)
         setProjects(prev => prev.filter(p => p.slug !== project.slug))

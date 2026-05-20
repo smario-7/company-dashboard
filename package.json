@@ -7,7 +7,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "oauth:setup": "node scripts/oauth-setup-urls.mjs",
-    "oauth:verify": "node scripts/verify-github-oauth.mjs"
+    "oauth:verify": "node scripts/verify-github-oauth.mjs",
+    "db:migrate-github": "node scripts/migrate-github-to-supabase.mjs"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.0",

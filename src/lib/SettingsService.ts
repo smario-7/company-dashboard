@@ -81,20 +81,28 @@ export class SettingsService {
   }
 
   async getNotificationPrefs(userId: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('notification_prefs')
       .select('*')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
+    if (error) throw error
     return data
   }
 
   async upsertNotificationPrefs(
     userId: string,
-    prefs: Record<string, boolean>
+    prefs: {
+      on_card_assign?: boolean
+      on_comment?: boolean
+      on_due_date?: boolean
+      on_card_move?: boolean
+      on_mention?: boolean
+    },
   ): Promise<void> {
-    await supabase
+    const { error } = await supabase
       .from('notification_prefs')
       .upsert({ user_id: userId, ...prefs })
+    if (error) throw error
   }
 }

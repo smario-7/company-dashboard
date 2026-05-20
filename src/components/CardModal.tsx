@@ -9,20 +9,23 @@
 
 import { useState, useEffect } from 'react'
 import { CardEditorPanel } from './editor/CardEditorPanel'
+import { CardComments } from './CardComments'
+import { CardActivity } from './CardActivity'
 import type { CardMeta, Label } from '../lib/types'
 import type { GitHubStorage } from '../lib/GitHubStorage'
+import type { NotifyContext } from '../lib/trelloNotify'
 import { generateId } from '../lib/utils'
 
 interface Props {
   card:         CardMeta
-  sha:          string
   labels:       Label[]
   members:      string[]
   projectSlug:  string
   boardSlug:    string
+  boardId:      string
   storage:      GitHubStorage
-  onSave:       (updates: Partial<CardMeta>, sha: string) => Promise<{ sha: string }>
-  onArchive:    (sha: string) => Promise<void>
+  onSave:       (updates: Partial<CardMeta>, prev: CardMeta) => Promise<void>
+  onArchive:    () => Promise<void>
   onClose:      () => void
 }
 
@@ -34,8 +37,8 @@ const PRIORITY_OPTIONS = [
 ] as const
 
 export function CardModal({
-  card, sha: initialSha, labels, members,
-  projectSlug, boardSlug, storage,
+  card, labels, members,
+  projectSlug, boardSlug, boardId, storage,
   onSave, onArchive, onClose,
 }: Props) {
   // ── Local state (no auto-save) ──────────────────────────────────────────
@@ -49,8 +52,15 @@ export function CardModal({
   const [newItem,     setNewItem]     = useState('')
   const [saving,      setSaving]      = useState(false)
   const [archiving,   setArchiving]   = useState(false)
-  const [currentSha,  setCurrentSha]  = useState(initialSha)
   const [hasChanges,  setHasChanges]  = useState(false)
+
+  const notifyCtx: NotifyContext = {
+    projectSlug,
+    boardSlug,
+    boardId,
+    cardId:    card.id,
+    cardTitle: title.trim() || card.title,
+  }
 
   // Track changes
   useEffect(() => { setHasChanges(true) }, [title, description, labelIds, assignees, dueDate, priority, checklist])
@@ -66,20 +76,20 @@ export function CardModal({
   const handleSave = async () => {
     setSaving(true)
     try {
-      const result = await onSave({
+      const prev: CardMeta = { ...card, label_ids: card.label_ids, assignees: card.assignees }
+      await onSave({
         title:       title.trim() || card.title,
         description, label_ids: labelIds,
         assignees,   due_date: dueDate || null,
         priority,    checklist,
-      }, currentSha)
-      setCurrentSha(result.sha)
+      }, prev)
       setHasChanges(false)
     } finally { setSaving(false) }
   }
 
   const handleArchive = async () => {
     setArchiving(true)
-    try { await onArchive(currentSha); onClose() }
+    try { await onArchive(); onClose() }
     finally { setArchiving(false) }
   }
 
@@ -104,17 +114,17 @@ export function CardModal({
   const checkedCount = checklist.filter(i => i.done).length
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-2 pt-[3vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-1 py-4 sm:px-2 sm:py-5 lg:px-2 lg:py-6">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Modal — large */}
-      <div className="relative w-full max-w-5xl bg-surface-800 border border-white/5
-                      shadow-modal animate-slide-up rounded-3xl flex flex-col
-                      h-[94vh] overflow-hidden">
+      {/* Modal — viewport-sized with gutter */}
+      <div className="relative w-full max-w-[min(96rem,calc(100vw-0.5rem))] max-h-[calc(100dvh-3rem)]
+                      h-[min(90dvh,calc(100dvh-3rem))] bg-surface-800 border border-white/5
+                      shadow-modal animate-slide-up rounded-3xl flex flex-col overflow-hidden">
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
-        <div className="flex items-start gap-3 px-6 py-4 border-b border-white/5 flex-shrink-0">
+        <div className="flex items-start gap-3 px-8 py-4 border-b border-white/5 flex-shrink-0">
           <textarea
             value={title}
             onChange={e => setTitle(e.target.value)}
@@ -141,9 +151,10 @@ export function CardModal({
         <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
 
           {/* Left: metadata ─────────────────────────────────────────────── */}
-          <div className="w-full md:w-64 flex-shrink-0 border-b md:border-b-0 md:border-r border-white/5
+          <div className="w-full min-h-0 max-h-[min(45vh,50%)] md:max-h-none
+                          md:w-80 flex-shrink-0 border-b md:border-b-0 md:border-r border-white/5
                           overflow-y-auto flex flex-col">
-            <div className="flex-1 p-4 space-y-4">
+            <div className="flex-1 p-5 space-y-4">
 
               {/* Description */}
               <div>
@@ -281,10 +292,19 @@ export function CardModal({
                   <button onClick={addCheckItem} disabled={!newItem.trim()} className="btn-ghost py-1 text-xs px-2">Add</button>
                 </div>
               </div>
+
+              <CardComments
+                cardId={card.id}
+                boardId={boardId}
+                assignees={assignees}
+                notifyCtx={notifyCtx}
+              />
+
+              <CardActivity cardId={card.id} />
             </div>
 
             {/* Save + archive */}
-            <div className="border-t border-white/5 p-4 space-y-2 flex-shrink-0">
+            <div className="border-t border-white/5 p-5 space-y-2 flex-shrink-0">
               <button
                 onClick={handleSave}
                 disabled={saving || !hasChanges}

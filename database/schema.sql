@@ -1,3 +1,4 @@
+-- DEPRECATED: Etap 6 uses Supabase for users/prefs/Trello. This SQLite schema is legacy (init-database.mjs).
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
 

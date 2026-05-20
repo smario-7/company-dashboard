@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { ProjectService } from '../lib/ProjectService'
-import { BoardService } from '../lib/BoardService'
 import { CreateBoardModal } from '../components/CreateBoardModal'
 import { formatRelativeTime } from '../lib/utils'
 import type { Project, Board } from '../lib/types'
 
 export function ProjectBoardsPage() {
   const { projectSlug }   = useParams<{ projectSlug: string }>()
-  const { user, storage } = useAuth()
+  const { user, projects: projectsSvc, boards: boardsSvc } = useAuth()
   const navigate          = useNavigate()
 
   const [project,      setProject]      = useState<Project | null>(null)
@@ -21,36 +19,33 @@ export function ProjectBoardsPage() {
   const [archiving,    setArchiving]    = useState<string | null>(null)
   const [showArchived, setShowArchived] = useState(false)
 
-  const projectSvc = storage ? new ProjectService(storage) : null
-  const boardSvc   = storage ? new BoardService(storage)   : null
-
   const load = useCallback(async () => {
-    if (!projectSvc || !boardSvc || !projectSlug) return
+    if (!projectSlug) return
     setLoading(true)
     try {
       const [proj, bds] = await Promise.all([
-        projectSvc.getProject(projectSlug),
-        boardSvc.listBoards(projectSlug, showArchived),
+        projectsSvc.getProject(projectSlug),
+        boardsSvc.listBoards(projectSlug, showArchived),
       ])
       if (!proj) { navigate('/projects', { replace: true }); return }
-      setProject(proj.data)
+      setProject(proj)
       setBoards(bds)
     } finally { setLoading(false) }
-  }, [storage, projectSlug, showArchived]) // eslint-disable-line
+  }, [projectsSvc, boardsSvc, projectSlug, showArchived, navigate])
 
   useEffect(() => { load() }, [load])
 
   // ── Optimistic create ──────────────────────────────────────────────────────
   const handleCreate = async (data: Pick<Board, 'name' | 'description'>) => {
-    if (!boardSvc || !user || !projectSlug) return
-    const newBoard = await boardSvc.createBoard(projectSlug, data, user.github_login)
+    if (!user || !projectSlug) return
+    const newBoard = await boardsSvc.createBoard(projectSlug, data, user.github_login)
     setBoards(prev => [newBoard, ...prev])   // ← instant, no re-fetch
   }
 
   // ── Optimistic edit ────────────────────────────────────────────────────────
   const handleEdit = async (data: Pick<Board, 'name' | 'description'>) => {
-    if (!boardSvc || !editBoard || !projectSlug) return
-    await boardSvc.updateBoard(projectSlug, editBoard.slug, data)
+    if (!editBoard || !projectSlug) return
+    await boardsSvc.updateBoard(projectSlug, editBoard.slug, data)
     setBoards(prev => prev.map(b =>
       b.slug === editBoard.slug ? { ...b, ...data } : b
     ))
@@ -59,10 +54,10 @@ export function ProjectBoardsPage() {
 
   // ── Optimistic archive / restore ──────────────────────────────────────────
   const handleArchive = async (board: Board) => {
-    if (!boardSvc || !projectSlug) return
+    if (!projectSlug) return
     setArchiving(board.slug)
     try {
-      await boardSvc.setArchived(projectSlug, board.slug, !board.archived)
+      await boardsSvc.setArchived(projectSlug, board.slug, !board.archived)
       if (!showArchived) {
         setBoards(prev => prev.filter(b => b.slug !== board.slug))
       } else {

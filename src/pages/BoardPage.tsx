@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams } from 'react-router-dom'
 import {
   DndContext, DragOverlay, closestCenter,
   PointerSensor, KeyboardSensor,
@@ -23,8 +23,10 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useAuth } from '../contexts/AuthContext'
-import { BoardService } from '../lib/BoardService'
-import { CardService, type CardEntry } from '../lib/CardService'
+import type { CardEntry } from '../lib/SupabaseCardService'
+import { DocumentService } from '../lib/DocumentService'
+import type { NotifyContext } from '../lib/trelloNotify'
+import { notifyUsers } from '../lib/trelloNotify'
 import { SortableCard, CardMiniature } from '../components/CardMiniature'
 import { CardModal } from '../components/CardModal'
 import { LabelManager } from '../components/LabelManager'
@@ -47,13 +49,20 @@ const COLUMN_COLORS = [
   '#84cc16','#22c55e','#14b8a6','#3b82f6','#8b5cf6','#ec4899',
 ]
 
+/** Szerokość kolumny tablicy (320px). Niezależna od CardModal. */
+const BOARD_COL_WIDTH = 'w-80'
+
 export function BoardPage() {
   const { projectSlug, boardSlug } = useParams<{ projectSlug: string; boardSlug: string }>()
-  const { storage, settings, user } = useAuth()
+  const {
+    storage, settings, user,
+    boards: boardsSvc, cards: cardsSvc,
+    activity, notifications, dueReminders,
+  } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [board,          setBoard]          = useState<Board | null>(null)
-  const [localBoard,     setLocalBoard]     = useState<Board | null>(null) // unsaved local state
-  const [boardSha,       setBoardSha]       = useState('')
+  const [localBoard,     setLocalBoard]     = useState<Board | null>(null)
   const [cards,          setCards]          = useState<Record<string, CardEntry>>({})
   const [localOrder,     setLocalOrder]     = useState<Record<string, string[]>>({})
   const [loading,        setLoading]        = useState(true)
@@ -65,32 +74,36 @@ export function BoardPage() {
   const [activeId,       setActiveId]       = useState<string | null>(null)
   const [activeType,     setActiveType]     = useState<'card' | 'column' | null>(null)
 
-  const boardSvc = storage ? new BoardService(storage) : null
-  const cardSvc  = storage ? new CardService(storage)  : null
-
   // ─── Load ───────────────────────────────────────────────────────────────
 
   const load = useCallback(async () => {
-    if (!boardSvc || !projectSlug || !boardSlug) return
+    if (!projectSlug || !boardSlug) return
     setLoading(true)
     try {
-      const result = await boardSvc.getBoard(projectSlug, boardSlug)
-      if (!result) return
-      const { data, sha } = result
+      const data = await boardsSvc.getBoard(projectSlug, boardSlug)
+      if (!data) return
       setBoard(data)
       setLocalBoard(data)
-      setBoardSha(sha)
       setLocalOrder(data.card_order)
 
       const ids = allCardIds(data.card_order)
-      if (ids.length > 0 && cardSvc) {
-        const loaded = await cardSvc.loadCards(projectSlug, boardSlug, ids)
+      if (ids.length > 0) {
+        const loaded = await cardsSvc.loadCards(data.id, ids)
         setCards(loaded)
       }
+
+      if (user) {
+        await dueReminders.checkBoard(data.id, projectSlug, boardSlug, user.id)
+      }
     } finally { setLoading(false) }
-  }, [storage, projectSlug, boardSlug]) // eslint-disable-line
+  }, [boardsSvc, cardsSvc, dueReminders, projectSlug, boardSlug, user?.id])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    const cardParam = searchParams.get('card')
+    if (cardParam) setOpenCardId(cardParam)
+  }, [searchParams])
 
   useEffect(() => {
     void settings.getAllProfiles().then(profiles => {
@@ -98,16 +111,51 @@ export function BoardPage() {
     })
   }, [settings])
 
-  // ─── Save to GitHub (explicit) ──────────────────────────────────────────
+  const notifyCtx = (cardId: string, cardTitle: string): NotifyContext | null => {
+    if (!localBoard || !projectSlug || !boardSlug) return null
+    return {
+      projectSlug,
+      boardSlug,
+      boardId:   localBoard.id,
+      cardId,
+      cardTitle,
+    }
+  }
 
-  const saveToGitHub = async () => {
-    if (!localBoard || !boardSvc || !projectSlug || !boardSlug) return
+  // ─── Save to Supabase (explicit) ─────────────────────────────────────────
+
+  const saveBoard = async () => {
+    if (!localBoard || !board || !projectSlug || !boardSlug || !user) return
     setSaving(true)
     try {
-      const result = await boardSvc.saveBoard(projectSlug, boardSlug, localBoard, boardSha)
-      setBoardSha(result.sha)
+      const prevOrder = board.card_order
+      const nextOrder = localBoard.card_order
+
+      await boardsSvc.saveBoard(localBoard)
       setBoard(localBoard)
       setPendingChanges(false)
+
+      for (const cardId of allCardIds(nextOrder)) {
+        const prevCol = findCardColumn(cardId, prevOrder)
+        const nextCol = findCardColumn(cardId, nextOrder)
+        if (prevCol && nextCol && prevCol !== nextCol) {
+          const card = cards[cardId]?.data
+          if (!card || card.assignees.length === 0) continue
+          const ctx = notifyCtx(cardId, card.title)
+          if (!ctx) continue
+          await activity.log(localBoard.id, cardId, user.id, 'card_moved', {
+            from_column: prevCol,
+            to_column:   nextCol,
+          })
+          await notifyUsers(
+            notifications,
+            user.id,
+            card.assignees,
+            'card_moved',
+            ctx,
+          )
+        }
+      }
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : 'Save failed. Please refresh and try again.')
     } finally { setSaving(false) }
@@ -127,44 +175,58 @@ export function BoardPage() {
   // ─── Card creation (always commits immediately) ─────────────────────────
 
   const createCard = async (colId: string, title: string) => {
-    if (!cardSvc || !user || !localBoard || !projectSlug || !boardSlug) return
+    if (!user || !localBoard || !projectSlug || !boardSlug) return
     setSaving(true)
     try {
-      const meta  = await cardSvc.createCard(projectSlug, boardSlug, title, user!.github_login)
+      const meta = await cardsSvc.createCard(localBoard.id, title, user.github_login)
       const newOrder = {
         ...localBoard.card_order,
         [colId]: [...(localBoard.card_order[colId] ?? []), meta.id],
       }
       const updatedBoard = { ...localBoard, card_order: newOrder }
-      // Commit immediately (new card always saves)
-      const result = await boardSvc!.saveBoard(projectSlug, boardSlug, updatedBoard, boardSha)
-      setBoardSha(result.sha)
+      await boardsSvc.saveBoard(updatedBoard)
       setBoard(updatedBoard)
       setLocalBoard(updatedBoard)
       setLocalOrder(newOrder)
       setPendingChanges(false)
+      setCards(prev => ({ ...prev, [meta.id]: { data: meta } }))
 
-      // Load card meta SHA
-      const entry = await cardSvc.loadCards(projectSlug, boardSlug, [meta.id])
-      setCards(prev => ({ ...prev, ...entry }))
+      if (storage) {
+        const docSvc = new DocumentService(storage)
+        await docSvc.ensureReadme(projectSlug, boardSlug, meta.id, meta.title)
+      }
+
+      await activity.log(localBoard.id, meta.id, user.id, 'card_created', { title })
     } finally { setSaving(false) }
   }
 
   // ─── Card save / archive ────────────────────────────────────────────────
 
-  const handleCardSave = async (cardId: string, updates: Partial<CardMeta>, sha: string): Promise<{ sha: string }> => {
-    if (!cardSvc || !projectSlug || !boardSlug) return { sha }
-    const result = await cardSvc.updateCard(projectSlug, boardSlug, cardId, updates, sha)
-    setCards(prev => prev[cardId]
-      ? { ...prev, [cardId]: { data: { ...prev[cardId].data, ...updates }, sha: result.sha } }
-      : prev
-    )
-    return result
+  const handleCardSave = async (
+    cardId: string,
+    updates: Partial<CardMeta>,
+    prev: CardMeta,
+  ): Promise<void> => {
+    if (!localBoard || !user) return
+    const updated = await cardsSvc.updateCard(localBoard.id, cardId, updates)
+    setCards(prevMap => ({
+      ...prevMap,
+      [cardId]: { data: updated },
+    }))
+
+    const added = updates.assignees?.filter(a => !prev.assignees.includes(a)) ?? []
+    if (added.length > 0) {
+      const ctx = notifyCtx(cardId, updated.title)
+      if (ctx) {
+        await activity.log(localBoard.id, cardId, user.id, 'assignee_added', { assignees: added })
+        await notifyUsers(notifications, user.id, added, 'card_assigned', ctx)
+      }
+    }
   }
 
-  const handleCardArchive = async (cardId: string, sha: string) => {
-    if (!cardSvc || !projectSlug || !boardSlug) return
-    await cardSvc.setArchived(projectSlug, boardSlug, cardId, sha, true)
+  const handleCardArchive = async (cardId: string) => {
+    if (!localBoard) return
+    await cardsSvc.setArchived(localBoard.id, cardId, true)
     mutateBoard(b => {
       const newOrder: Record<string, string[]> = {}
       for (const [col, ids] of Object.entries(b.card_order)) {
@@ -174,8 +236,8 @@ export function BoardPage() {
     })
     setCards(prev => { const n = { ...prev }; delete n[cardId]; return n })
     setOpenCardId(null)
-    // Archive also needs immediate save (card removed from order)
-    await saveToGitHub()
+    setSearchParams({})
+    await saveBoard()
   }
 
   // ─── Column operations (all pending) ────────────────────────────────────
@@ -317,7 +379,7 @@ export function BoardPage() {
             🏷 Labels
           </button>
           <button
-            onClick={saveToGitHub}
+            onClick={saveBoard}
             disabled={!pendingChanges || saving}
             className={`btn-primary text-xs py-1.5 px-3 ${!pendingChanges ? 'opacity-40 cursor-not-allowed' : ''}`}
           >
@@ -363,29 +425,32 @@ export function BoardPage() {
 
         <DragOverlay>
           {activeId && activeType === 'card' && cards[activeId] && (
-            <div className="w-64 rotate-2 scale-105">
+            <div className={`${BOARD_COL_WIDTH} rotate-2 scale-105`}>
               <CardMiniature card={cards[activeId].data} labels={localBoard.labels} onClick={() => {}} />
             </div>
           )}
           {activeId && activeType === 'column' && (
-            <div className="w-64 opacity-80 rounded-2xl bg-surface-800 border border-white/10 h-40" />
+            <div className={`${BOARD_COL_WIDTH} opacity-80 rounded-2xl bg-surface-800 border border-white/10 h-40`} />
           )}
         </DragOverlay>
       </DndContext>
 
       {/* ── Card Modal ───────────────────────────────────────────────────────── */}
-      {openCard && storage && (
+      {openCard && storage && user && (
         <CardModal
           card={openCard.data}
-          sha={openCard.sha}
           labels={localBoard.labels}
           members={members}
           projectSlug={projectSlug!}
           boardSlug={boardSlug!}
+          boardId={localBoard.id}
           storage={storage}
-          onSave={(updates, sha) => handleCardSave(openCardId!, updates, sha)}
-          onArchive={sha => handleCardArchive(openCardId!, sha)}
-          onClose={() => setOpenCardId(null)}
+          onSave={(updates, prev) => handleCardSave(openCardId!, updates, prev)}
+          onArchive={() => handleCardArchive(openCardId!)}
+          onClose={() => {
+            setOpenCardId(null)
+            setSearchParams({})
+          }}
         />
       )}
 
@@ -442,7 +507,7 @@ function BoardColumn({ column, cardIds, cards, labels, onCardClick, onAddCard, o
 
   return (
     <div ref={setNodeRef} style={style}
-      className={`flex-shrink-0 w-64 flex flex-col rounded-2xl bg-surface-800 border border-white/5 max-h-full ${isDragging ? 'opacity-40' : ''}`}>
+      className={`flex-shrink-0 ${BOARD_COL_WIDTH} flex flex-col rounded-2xl bg-surface-800 border border-white/5 max-h-full ${isDragging ? 'opacity-40' : ''}`}>
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2.5 cursor-grab active:cursor-grabbing flex-shrink-0"
         {...attributes} {...listeners}>
@@ -545,7 +610,7 @@ function AddColumnButton({ onAdd }: { onAdd: (name: string) => void }) {
   const submit = () => { if (name.trim()) { onAdd(name.trim()); setName('') } setOpen(false) }
 
   return (
-    <div className="flex-shrink-0 w-64">
+    <div className={`flex-shrink-0 ${BOARD_COL_WIDTH}`}>
       {open ? (
         <div className="rounded-2xl bg-surface-800 border border-white/5 p-3 space-y-2">
           <input ref={inputRef} type="text" placeholder="Column name" value={name}

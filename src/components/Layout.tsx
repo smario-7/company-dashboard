@@ -8,6 +8,7 @@
 
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { NotificationBell } from './notifications/NotificationBell'
 
 interface NavItem {
   to:       string
@@ -82,6 +83,9 @@ export function Layout() {
             </svg>
           </div>
           <span className="font-display text-sm font-semibold text-surface-50">Dashboard</span>
+          <div className="ml-auto">
+            <NotificationBell />
+          </div>
         </div>
 
         {/* Nav */}
@@ -143,11 +147,14 @@ export function Layout() {
             </div>
             <span className="font-display text-sm font-semibold text-surface-50">Dashboard</span>
           </div>
-          {user?.avatar_url && (
-            <button onClick={() => navigate('/profile')}>
-              <img src={user.avatar_url} alt="" className="h-7 w-7 rounded-full ring-1 ring-white/10" />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            {user?.avatar_url && (
+              <button onClick={() => navigate('/profile')}>
+                <img src={user.avatar_url} alt="" className="h-7 w-7 rounded-full ring-1 ring-white/10" />
+              </button>
+            )}
+          </div>
         </header>
 
         <Outlet />

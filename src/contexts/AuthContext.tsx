@@ -14,6 +14,13 @@ import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { supabase, type UserProfile } from '../lib/supabase'
 import { SettingsService } from '../lib/SettingsService'
 import { GitHubStorage } from '../lib/GitHubStorage'
+import { SupabaseProjectService } from '../lib/SupabaseProjectService'
+import { SupabaseBoardService } from '../lib/SupabaseBoardService'
+import { SupabaseCardService } from '../lib/SupabaseCardService'
+import { ActivityService } from '../lib/ActivityService'
+import { CommentService } from '../lib/CommentService'
+import { NotificationService } from '../lib/NotificationService'
+import { DueDateReminderService } from '../lib/DueDateReminderService'
 import { useRepoAccessGuard } from '../hooks/useRepoAccessGuard'
 
 const OWNER = import.meta.env.VITE_GITHUB_OWNER
@@ -21,15 +28,29 @@ const REPO  = import.meta.env.VITE_GITHUB_REPO
 const GH_TOKEN_KEY = 'company-dashboard:github_provider_token'
 
 const settingsSvc = new SettingsService()
+const projectsSvc      = new SupabaseProjectService()
+const boardsSvc        = new SupabaseBoardService()
+const cardsSvc         = new SupabaseCardService()
+const activitySvc      = new ActivityService()
+const commentsSvc      = new CommentService()
+const notificationsSvc = new NotificationService()
+const dueRemindersSvc  = new DueDateReminderService(cardsSvc, notificationsSvc)
 
 export interface AuthContextValue {
-  user:      UserProfile | null
-  storage:   GitHubStorage | null
-  settings:  SettingsService
-  session:   Session | null
-  isLoading: boolean
-  authError: string | null
-  logout:    () => Promise<void>
+  user:          UserProfile | null
+  storage:       GitHubStorage | null
+  settings:      SettingsService
+  projects:      SupabaseProjectService
+  boards:        SupabaseBoardService
+  cards:         SupabaseCardService
+  activity:      ActivityService
+  comments:      CommentService
+  notifications: NotificationService
+  dueReminders:  DueDateReminderService
+  session:       Session | null
+  isLoading:     boolean
+  authError:     string | null
+  logout:        () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -188,6 +209,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, storage, settings: settingsSvc,
+      projects: projectsSvc,
+      boards: boardsSvc,
+      cards: cardsSvc,
+      activity: activitySvc,
+      comments: commentsSvc,
+      notifications: notificationsSvc,
+      dueReminders: dueRemindersSvc,
       session, isLoading, authError, logout,
     }}>
       {children}

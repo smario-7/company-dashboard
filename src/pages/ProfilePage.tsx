@@ -6,17 +6,59 @@
  * - Account info and sign out
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
 type ThemeOption = 'light' | 'dark' | 'system'
+
+interface NotifPrefs {
+  on_card_assign: boolean
+  on_comment: boolean
+  on_due_date: boolean
+  on_card_move: boolean
+  on_mention: boolean
+}
+
+const DEFAULT_NOTIF_PREFS: NotifPrefs = {
+  on_card_assign: true,
+  on_comment:     true,
+  on_due_date:    true,
+  on_card_move:   false,
+  on_mention:     true,
+}
 
 export function ProfilePage() {
   const { user, settings, logout } = useAuth()
   const [themeOverride, setThemeOverride] = useState<ThemeOption | null>(null)
   const [themeSaving, setThemeSaving] = useState(false)
+  const [notifPrefs, setNotifPrefs]   = useState<NotifPrefs>(DEFAULT_NOTIF_PREFS)
+  const [notifSaving, setNotifSaving] = useState(false)
 
   const activeTheme = themeOverride ?? user?.theme ?? 'system'
+
+  useEffect(() => {
+    if (!user) return
+    void settings.getNotificationPrefs(user.id).then(p => {
+      if (p) {
+        setNotifPrefs({
+          on_card_assign: p.on_card_assign ?? true,
+          on_comment:     p.on_comment ?? true,
+          on_due_date:    p.on_due_date ?? true,
+          on_card_move:   p.on_card_move ?? false,
+          on_mention:     p.on_mention ?? true,
+        })
+      }
+    })
+  }, [user, settings])
+
+  const setNotifPref = async (key: keyof NotifPrefs, value: boolean) => {
+    if (!user) return
+    const next = { ...notifPrefs, [key]: value }
+    setNotifPrefs(next)
+    setNotifSaving(true)
+    await settings.upsertNotificationPrefs(user.id, next)
+    setNotifSaving(false)
+  }
 
   const setTheme = async (next: ThemeOption) => {
     if (!user) return
@@ -70,6 +112,31 @@ export function ProfilePage() {
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="card p-5 space-y-3">
+        <h2 className="text-sm font-semibold text-surface-50">Notifications</h2>
+        <p className="text-xs text-surface-200/40">Choose which events appear in the bell menu.</p>
+        <ul className="space-y-2">
+          {([
+            ['on_card_assign', 'Card assigned to me'],
+            ['on_comment',     'New comment on my card'],
+            ['on_mention',     'Someone @mentions me'],
+            ['on_due_date',    'Due date reminders'],
+            ['on_card_move',   'Card moved when I am assigned'],
+          ] as const).map(([key, label]) => (
+            <li key={key} className="flex items-center justify-between gap-2">
+              <span className="text-xs text-surface-200/70">{label}</span>
+              <input
+                type="checkbox"
+                checked={notifPrefs[key]}
+                disabled={notifSaving}
+                onChange={e => void setNotifPref(key, e.target.checked)}
+                className="h-4 w-4 rounded border-white/20 accent-brand-500"
+              />
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="card p-5 space-y-3">

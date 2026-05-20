@@ -189,7 +189,7 @@ export function CardEditorPanel({ projectSlug, boardSlug, cardId, cardTitle, sto
         {tab === 'docs' ? (
           <>
             {/* File tree sidebar */}
-            <div className="w-44 flex-shrink-0">
+            <div className="w-56 flex-shrink-0">
               <FileTree
                 files={files}
                 activeFile={activeFile}

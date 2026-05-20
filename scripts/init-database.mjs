@@ -1,6 +1,6 @@
 /**
- * Tworzy pusty plik database.sqlite ze schematem z database/schema.sql.
- * Uruchom: npm run db:init
+ * DEPRECATED (Etap 6): użytkownicy i prefs są w Supabase.
+ * Legacy: tworzy database.sqlite ze schematem z database/schema.sql.
  */
 
 import initSqlJs from 'sql.js'
