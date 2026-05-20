@@ -1,0 +1,14 @@
+{
+  "id": "a0000103-0103-4103-8103-000000000103",
+  "title": "Customer journey",
+  "description": "Mapa w pliku journey.canvas (JSON Canvas 1.0).",
+  "label_ids": ["a0000202-0202-4202-8202-000000000202"],
+  "assignees": [],
+  "due_date": null,
+  "priority": "medium",
+  "checklist": [],
+  "archived": false,
+  "created_by": "company-dashboard-seed",
+  "created_at": "2026-05-20T10:00:00.000Z",
+  "updated_at": "2026-05-20T10:00:00.000Z"
+}

@@ -1,0 +1,18 @@
+{
+  "campaign": "Q2 B2B awareness",
+  "period": "2026-Q2",
+  "targets": {
+    "mql": 120,
+    "ctr_landing_pct": 3.5,
+    "cost_per_lead_pln": 45
+  },
+  "actuals": {
+    "mql": 48,
+    "ctr_landing_pct": 2.9,
+    "cost_per_lead_pln": 52
+  },
+  "channels": [
+    { "name": "linkedin", "spend_pln": 12000, "leads": 32 },
+    { "name": "newsletter", "spend_pln": 2000, "leads": 16 }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "b0000101-0101-4101-8101-000000000101",
+  "title": "API contract",
+  "description": "OpenAPI sample w openapi-sample.json.",
+  "label_ids": ["b0000202-0202-4202-8202-000000000202"],
+  "assignees": [],
+  "due_date": null,
+  "priority": "high",
+  "checklist": [
+    {
+      "id": "b0000301-0301-4301-8301-000000000301",
+      "text": "Review endpoint /boards",
+      "done": true
+    }
+  ],
+  "archived": false,
+  "created_by": "company-dashboard-seed",
+  "created_at": "2026-05-20T10:00:00.000Z",
+  "updated_at": "2026-05-20T10:00:00.000Z"
+}

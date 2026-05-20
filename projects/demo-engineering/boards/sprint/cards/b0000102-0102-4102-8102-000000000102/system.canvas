@@ -1,0 +1,68 @@
+{
+  "nodes": [
+    {
+      "id": "s-node-001",
+      "type": "text",
+      "x": 60,
+      "y": 40,
+      "width": 200,
+      "height": 90,
+      "text": "React UI\n(Vite)",
+      "color": "6"
+    },
+    {
+      "id": "s-node-002",
+      "type": "text",
+      "x": 320,
+      "y": 40,
+      "width": 200,
+      "height": 90,
+      "text": "Supabase\nboards + cards",
+      "color": "4"
+    },
+    {
+      "id": "s-node-003",
+      "type": "text",
+      "x": 190,
+      "y": 180,
+      "width": 200,
+      "height": 90,
+      "text": "GitHub vault\n*.md, canvas, assets",
+      "color": "2"
+    },
+    {
+      "id": "s-node-004",
+      "type": "file",
+      "x": 60,
+      "y": 300,
+      "width": 240,
+      "height": 140,
+      "file": "openapi-sample.json"
+    }
+  ],
+  "edges": [
+    {
+      "id": "s-edge-001",
+      "fromNode": "s-node-001",
+      "fromSide": "right",
+      "toNode": "s-node-002",
+      "toSide": "left",
+      "label": "REST"
+    },
+    {
+      "id": "s-edge-002",
+      "fromNode": "s-node-001",
+      "fromSide": "bottom",
+      "toNode": "s-node-003",
+      "toSide": "top",
+      "label": "Documents"
+    },
+    {
+      "id": "s-edge-003",
+      "fromNode": "s-node-003",
+      "fromSide": "bottom",
+      "toNode": "s-node-004",
+      "toSide": "top"
+    }
+  ]
+}

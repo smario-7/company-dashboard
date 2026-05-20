@@ -1,0 +1,11 @@
+{
+  "name": "Marketing Demo",
+  "description": "Przykładowy projekt marketingowy z załącznikami demo (md, canvas, json, svg).",
+  "color": "#3b82f6",
+  "emoji": "📣",
+  "id": "a0000001-0001-4001-8001-000000000001",
+  "slug": "demo-marketing",
+  "created_by": "company-dashboard-seed",
+  "created_at": "2026-05-20T10:00:00.000Z",
+  "archived": false
+}

@@ -1,0 +1,58 @@
+{
+  "nodes": [
+    {
+      "id": "j-node-001",
+      "type": "text",
+      "x": 40,
+      "y": 60,
+      "width": 220,
+      "height": 100,
+      "text": "Awareness\nLinkedIn, ads",
+      "color": "4"
+    },
+    {
+      "id": "j-node-002",
+      "type": "text",
+      "x": 320,
+      "y": 60,
+      "width": 220,
+      "height": 100,
+      "text": "Consideration\nLanding + webinar",
+      "color": "5"
+    },
+    {
+      "id": "j-node-003",
+      "type": "file",
+      "x": 40,
+      "y": 220,
+      "width": 200,
+      "height": 160,
+      "file": "README.md"
+    },
+    {
+      "id": "j-node-004",
+      "type": "file",
+      "x": 280,
+      "y": 220,
+      "width": 200,
+      "height": 160,
+      "file": "brief.md"
+    }
+  ],
+  "edges": [
+    {
+      "id": "j-edge-001",
+      "fromNode": "j-node-001",
+      "fromSide": "right",
+      "toNode": "j-node-002",
+      "toSide": "left"
+    },
+    {
+      "id": "j-edge-002",
+      "fromNode": "j-node-002",
+      "fromSide": "bottom",
+      "toNode": "j-node-004",
+      "toSide": "top"
+    }
+  ]
+}

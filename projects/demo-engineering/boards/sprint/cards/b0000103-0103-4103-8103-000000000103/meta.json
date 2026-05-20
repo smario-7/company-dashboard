@@ -1,0 +1,14 @@
+{
+  "id": "b0000103-0103-4103-8103-000000000103",
+  "title": "Release notes",
+  "description": "RELEASE.md + badge SVG w assets/.",
+  "label_ids": ["b0000201-0201-4201-8201-000000000201"],
+  "assignees": [],
+  "due_date": null,
+  "priority": "none",
+  "checklist": [],
+  "archived": false,
+  "created_by": "company-dashboard-seed",
+  "created_at": "2026-05-20T10:00:00.000Z",
+  "updated_at": "2026-05-20T10:00:00.000Z"
+}

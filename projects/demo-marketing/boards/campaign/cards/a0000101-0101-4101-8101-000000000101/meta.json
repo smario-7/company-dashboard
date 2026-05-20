@@ -1,0 +1,25 @@
+{
+  "id": "a0000101-0101-4101-8101-000000000101",
+  "title": "Brief kampanii",
+  "description": "Główny dokument briefu — zobacz brief.md w vault.",
+  "label_ids": ["a0000201-0201-4201-8201-000000000201"],
+  "assignees": [],
+  "due_date": null,
+  "priority": "high",
+  "checklist": [
+    {
+      "id": "a0000301-0301-4301-8301-000000000301",
+      "text": "Zatwierdzić grupę docelową",
+      "done": true
+    },
+    {
+      "id": "a0000302-0302-4302-8302-000000000302",
+      "text": "Ustalić budżet mediowy",
+      "done": false
+    }
+  ],
+  "archived": false,
+  "created_by": "company-dashboard-seed",
+  "created_at": "2026-05-20T10:00:00.000Z",
+  "updated_at": "2026-05-20T10:00:00.000Z"
+}
