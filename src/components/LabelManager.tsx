@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Modal } from './Modal'
 import { generateId } from '../lib/utils'
 import type { Label } from '../lib/types'
@@ -23,8 +23,13 @@ export function LabelManager({ open, onClose, labels, onSave }: Props) {
   const [editId,  setEditId]  = useState<string | null>(null)
   const [saving,  setSaving]  = useState(false)
 
-  // Reset when opened
-  const handleOpen = () => { setLocal(labels); setEditId(null); setNewName(''); setNewColor(PRESET_COLORS[6]) }
+  useEffect(() => {
+    if (!open) return
+    setLocal(labels)
+    setEditId(null)
+    setNewName('')
+    setNewColor(PRESET_COLORS[6])
+  }, [open, labels])
 
   const addLabel = () => {
     if (!newName.trim()) return
@@ -59,7 +64,7 @@ export function LabelManager({ open, onClose, labels, onSave }: Props) {
         </>
       }
     >
-      <div onFocus={handleOpen}>
+      <div>
         {/* Existing labels */}
         {local.length > 0 && (
           <ul className="space-y-2 mb-4">
