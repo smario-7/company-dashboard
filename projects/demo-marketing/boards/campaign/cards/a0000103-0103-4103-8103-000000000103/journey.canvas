@@ -7,8 +7,8 @@
       "y": 60,
       "width": 220,
       "height": 100,
-      "text": "Awareness\nLinkedIn, ads",
-      "color": "4"
+      "color": "4",
+      "text": "Awareness\nLinkedIn, ads"
     },
     {
       "id": "j-node-002",
@@ -17,42 +17,57 @@
       "y": 60,
       "width": 220,
       "height": 100,
-      "text": "Consideration\nLanding + webinar",
-      "color": "5"
+      "color": "5",
+      "text": "Consideration\nLanding + webinar"
     },
     {
       "id": "j-node-003",
       "type": "file",
-      "x": 40,
-      "y": 220,
+      "x": -140,
+      "y": 300,
       "width": 200,
       "height": 160,
-      "file": "README.md"
+      "file": "projects/demo-marketing/boards/campaign/cards/a0000103-0103-4103-8103-000000000103/README.md"
     },
     {
       "id": "j-node-004",
       "type": "file",
-      "x": 280,
-      "y": 220,
+      "x": 460,
+      "y": 400,
       "width": 200,
       "height": 160,
-      "file": "brief.md"
+      "file": "projects/demo-marketing/boards/campaign/cards/a0000103-0103-4103-8103-000000000103/brief.md"
     }
   ],
   "edges": [
     {
       "id": "j-edge-001",
       "fromNode": "j-node-001",
-      "fromSide": "right",
       "toNode": "j-node-002",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "fromSide": "right",
       "toSide": "left"
     },
     {
       "id": "j-edge-002",
       "fromNode": "j-node-002",
-      "fromSide": "bottom",
       "toNode": "j-node-004",
-      "toSide": "top"
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "label": "kierunek",
+      "color": "3"
+    },
+    {
+      "id": "85221c43e8489a6c",
+      "fromNode": "j-node-004",
+      "toNode": "j-node-003",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "fromSide": "left",
+      "toSide": "right"
     }
   ]
 }
